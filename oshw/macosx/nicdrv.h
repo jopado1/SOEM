@@ -3,9 +3,9 @@
  * LICENSE file in the project root for full license information
  */
 
-/** \file 
+/** \file
  * \brief
- * Headerfile for nicdrv.c 
+ * Headerfile for nicdrv.c
  */
 
 #ifndef _nicdrvh_
@@ -16,69 +16,60 @@ extern "C"
 {
 #endif
 
-#include <vxWorks.h>
-
-/** structure to connect EtherCAT stack and VxWorks device */
-typedef struct ETHERCAT_PKT_DEV
-{
-   struct ecx_port  *port;
-   void             *pCookie;
-   void             *endObj; 
-   UINT32           redundant;
-   UINT32           tx_count;
-   UINT32           rx_count;
-   UINT32           overrun_count;
-   UINT32           abandoned_count;
-}ETHERCAT_PKT_DEV;
+#include <pcap/pcap.h>
 
 /** pointer structure to Tx and Rx stacks */
 typedef struct
 {
+   /** socket connection used */
+   pcap_t      **sock;
    /** tx buffer */
    ec_bufT     (*txbuf)[EC_MAXBUF];
    /** tx buffer lengths */
    int         (*txbuflength)[EC_MAXBUF];
+   /** temporary receive buffer */
+   ec_bufT     *tempbuf;
    /** rx buffers */
    ec_bufT     (*rxbuf)[EC_MAXBUF];
    /** rx buffer status fields */
    int         (*rxbufstat)[EC_MAXBUF];
    /** received MAC source address (middle word) */
    int         (*rxsa)[EC_MAXBUF];
-} ec_stackT;   
+} ec_stackT;
 
 /** pointer structure to buffers for redundant port */
-typedef struct ecx_redport
+typedef struct
 {
-   /** Stack reference */   
-   ec_stackT stack;
-   /** Packet device instance */
-   ETHERCAT_PKT_DEV pktDev;
+   ec_stackT   stack;
+   pcap_t      *sockhandle;
    /** rx buffers */
    ec_bufT rxbuf[EC_MAXBUF];
    /** rx buffer status */
    int rxbufstat[EC_MAXBUF];
    /** rx MAC source address */
    int rxsa[EC_MAXBUF];
-   /** MSG Q for receive callbacks to post into */
-   MSG_Q_ID  msgQId[EC_MAXBUF];
+   /** temporary rx buffer */
+   ec_bufT tempinbuf;
 } ecx_redportt;
 
 /** pointer structure to buffers, vars and mutexes for port instantiation */
-typedef struct ecx_port
+typedef struct
 {
-   /** Stack reference */   
-   ec_stackT stack;
-   /** Packet device instance */
-   ETHERCAT_PKT_DEV pktDev;
+   ec_stackT   stack;
+   pcap_t      *sockhandle;
    /** rx buffers */
    ec_bufT rxbuf[EC_MAXBUF];
    /** rx buffer status */
    int rxbufstat[EC_MAXBUF];
    /** rx MAC source address */
    int rxsa[EC_MAXBUF];
+   /** temporary rx buffer */
+   ec_bufT tempinbuf;
+   /** temporary rx buffer status */
+   int tempinbufs;
    /** transmit buffers */
    ec_bufT txbuf[EC_MAXBUF];
-   /** transmit buffer lengths */
+   /** transmit buffer lenghts */
    int txbuflength[EC_MAXBUF];
    /** temporary tx buffer */
    ec_bufT txbuf2;
@@ -89,11 +80,10 @@ typedef struct ecx_port
    /** current redundancy state */
    int redstate;
    /** pointer to redundancy port and buffers */
-   ecx_redportt *redport;   
-   /** Semaphore to protect single resources */
-   SEM_ID  sem_get_index;
-   /** MSG Q for receive callbacks to post into */
-   MSG_Q_ID  msgQId[EC_MAXBUF];
+   ecx_redportt *redport;
+   pthread_mutex_t getindex_mutex;
+   pthread_mutex_t tx_mutex;
+   pthread_mutex_t rx_mutex;
 } ecx_portt;
 
 extern const uint16 priMAC[3];

@@ -21,13 +21,18 @@ Windows (Visual Studio)
    * `cmake .. -G "NMake Makefiles"`
    * `nmake`
 
-Linux
------
+Linux & macOS
+--------------
 
    * `mkdir build`
    * `cd build`
    * `cmake ..`
    * `make`
+
+ERIKA Enterprise RTOS
+---------------------
+
+ * Refer to http://www.erika-enterprise.com/wiki/index.php?title=EtherCAT_Master
 
 Documentation
 -------------
